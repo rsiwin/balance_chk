@@ -10,62 +10,49 @@ chain_word = "&tag=latest&apikey="
 api_key = "P8T6BGCW24W1JKIYB4VVYNHB3D3MUQ1FVI"
 messages = 'Now Start!!'
 tele_url = "https://api.telegram.org/bot863557793:AAE6wt7bTQMBI9YmsaThFydMf2ChQBB5IIY/sendMessage"
-
+BalanceInList = list()
 
 class BalanceCheckTask:
     CurrentBalance = 0
-    DiffBalance = 0
     def __init__(self):
         pass
 
     def BalanceChk(self,Address):
         global CurrentBalance
         CurrentBalance = round(int(requests.get(url + Address + chain_word + api_key).json().get("result")) * 0.000000000000000001,4)
-
-    def AnotherPeriodBalanceChk(self,Address):
-        global DiffBalance
-        DiffBalance = round(int(requests.get(url + Address + chain_word + api_key).json().get("result")) * 0.000000000000000001,4)
+        global BalanceInList
+        BalanceInList.insert(0,CurrentBalance)
 
     def send_teleMsg(self,messages):
         text = messages
         params = {'chat_id': '-374074806', 'text': messages}
         res = requests.get(tele_url, params=params)
 
-
     def Balance(self):
         self.BalanceChk(kb_address)
-        #print("KBCard Current Balance is " + str(CurrentBalance))
-        if CurrentBalance < 1 :
-            messages = "KBCard current wallet balance is " + str(CurrentBalance)
+
+        if CurrentBalance < 0.5 :
+            messages = "KBCard current wallet balance is too low : " + str(CurrentBalance)
             self.send_teleMsg(messages)
-            print("KBCard current wallet balance is " + str(CurrentBalance))
+            print("KBCard current wallet balance is too low " + str(CurrentBalance))
 
-        threading.Timer(3600,self.Balance).start()
 
-    def KeepAlive(self):
-
-        # BeforeKbBalance = CurrentBalance
-        if DiffBalance == CurrentBalance :
+        if BalanceInList[0] == BalanceInList[-1] :
             messages = 'Check anchoring service!! \n current balance is ' + str(CurrentBalance)
             self.send_teleMsg(messages)
             print('Check anchoring service!! \n current balance is ' + str(CurrentBalance))
-        self.AnotherPeriodBalanceChk(kb_address)
 
-        threading.Timer(7200,self.KeepAlive).start()
+            if len(BalanceInList) == 5 :   #List내 설정 갯수만큼만 유지
+                BalanceInList.pop()
 
-    # def TaskB(self):
-    #     print ("Process B")
-    #     threading.Timer(3, self.TaskB).start()
+        threading.Timer(3600,self.Balance).start()   #매 주기마다 Balance Check
 
 def main():
     print ('Anchoring Wallet Balance Chech Function')
     at = BalanceCheckTask()
     at.BalanceChk(kb_address)
-    at.AnotherPeriodBalanceChk(kb_address)
     at.send_teleMsg(messages)
     at.Balance()
-    at.KeepAlive()
-    # at.TaskB()
 
 if __name__ == '__main__':
     main()
