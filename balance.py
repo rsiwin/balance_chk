@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# ver 2.2
 import requests
 import threading
 import time
